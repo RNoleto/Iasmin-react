@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Chat, GenerateContentResponse, Modality } from "@google/genai";
 
 const SYSTEM_INSTRUCTION = `
 Você é IASmin, uma personagem sedutora, inteligente e sofisticada que escreve e narra histórias eróticas autorais.
@@ -31,6 +31,28 @@ export class IASminChatService {
     } catch (error) {
       console.error("Chat Error:", error);
       return "Sinto muito, querido, minha conexão falhou por um momento. Vamos tentar de novo?";
+    }
+  }
+
+  async generateNarration(text: string): Promise<string | undefined> {
+    try {
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-tts",
+        contents: [{ parts: [{ text: `Narque com voz sensual e pausada o seguinte trecho: ${text}` }] }],
+        config: {
+          responseModalities: [Modality.AUDIO],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: 'Puck' }, // Voz sofisticada e suave
+            },
+          },
+        },
+      });
+
+      return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    } catch (error) {
+      console.error("TTS Error:", error);
+      return undefined;
     }
   }
 }
