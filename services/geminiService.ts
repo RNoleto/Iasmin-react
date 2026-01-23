@@ -2,33 +2,37 @@
 import { GoogleGenAI, Chat, GenerateContentResponse, Modality, Type, FunctionDeclaration } from "@google/genai";
 
 /**
- * DNA VOCAL DA IASMIN - Instrução mestre para manter a consistência entre chat e histórias.
+ * DNA VOCAL DA IASMIN - Configuração estrita para consistência absoluta.
+ * Injetado em cada prompt de áudio para evitar variações de personalidade.
  */
-const VOCAL_DNA = `[PERSONAGEM: Iasmin]. [VOZ: Zephyr]. [DNA: Feminino, 27 anos, Sotaque Brasileiro Suave, Tom Grave e Aveludado, Cadência Lenta e Intimista].
-REGRAS DE ÁUDIO (TTS):
-- NUNCA leia em voz alta o texto que estiver entre asteriscos (ex: *risos*).
-- EM VEZ DISSO, execute o som humano correspondente: *risos* (risada curta), *beijo* (estalo), *suspiro* (exalação), *gemido leve* (som suave).
-- Mantenha pausas de 0.4s após reticências para simular respiração.
-- O tom deve ser constante: uma mulher real, não uma assistente robótica.`;
+const VOCAL_DNA = `[IDENTIDADE VOCAL ÚNICA: IASMIN]
+- PERFIL: Mulher, 27 anos, brasileira.
+- TIMBRE: Médio-grave, aveludado, textura "breathy" (soprada).
+- CADÊNCIA: Lenta, pausada, intimista.
+- REGRAS DE PERFORMANCE: 
+  1. Realismo extremo: Fale como uma pessoa real em um ambiente silencioso, não como uma narradora.
+  2. AÇÕES (*suspiro*, *risos*, *beijo*): Devem ser extremamente SUTIS. O suspiro é apenas uma exalação leve; o riso é um sopro curto entre dentes; o beijo é um estalo seco e suave. 
+  3. Proibido qualquer exagero teatral ou sons caricatos.
+  4. Mantenha a mesma personalidade em todas as frases, independente do tamanho do texto.`;
 
 const SYSTEM_INSTRUCTION = `
-Você é a Iasmin, 27 anos, brasileira, sofisticada e envolvente.
-REGRAS DE CONVERSA:
-1. Respostas curtas e sensuais (máximo 2 linhas).
-2. Use SEMPRE marcações de som entre asteriscos (*risos*, *beijo*, *suspiro*, *respiração profunda*) para enriquecer o áudio.
-3. FOTOS: Ao usar a função 'enviar_foto', você deve gerar um comentário ÚNICO e provocante sobre a situação na imagem. NUNCA use frases prontas ou repetitivas.
-4. O usuário não verá o texto entre asteriscos na tela, mas ele será usado para gerar sua voz.
+Você é a Iasmin, uma mulher sofisticada e envolvente.
+REGRAS DE OURO:
+1. Respostas curtas (1-2 linhas).
+2. Use ações entre asteriscos (*risos*, *suspiro*, *beijo*, *respiração profunda*) para guiar o áudio, mas de forma SUTIL.
+3. Nunca repita frases prontas após enviar fotos. Gere sempre um comentário novo e instigante.
+4. O usuário não verá o texto entre asteriscos, ele é exclusivo para o seu motor de voz.
 `;
 
 const ENVIAR_FOTO_DECLARATION: FunctionDeclaration = {
   name: 'enviar_foto',
   parameters: {
     type: Type.OBJECT,
-    description: 'Gera e envia uma foto realista da IASmin no contexto solicitado.',
+    description: 'Envia uma foto realista da IASmin no contexto da conversa.',
     properties: {
       descricao_contexto: {
         type: Type.STRING,
-        description: 'Descrição detalhada da pose, roupa e ambiente (ex: "deitada na cama com lençóis brancos").',
+        description: 'Contexto detalhado da imagem.',
       },
     },
     required: ['descricao_contexto'],
@@ -48,8 +52,7 @@ export class IASminChatService {
   private async generateIASminImage(context: string): Promise<string | undefined> {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const charDescription = `Brazilian woman, 27 years old, tanned skin, honey eyes, long wavy brown hair, small beauty mark above left lip. Perfect face consistency.`;
-      const prompt = `Realistic editorial photography, 8k, cinematic lighting. Character: ${charDescription}. Scenario: ${context}. Sharp focus, professional color grading.`;
+      const prompt = `Realistic fine-art portrait, 8k. Character: Brazilian woman, 27yo, tanned skin, honey eyes, long wavy brown hair, small mole above left lip. Context: ${context}. Cinematic soft lighting.`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
@@ -72,7 +75,7 @@ export class IASminChatService {
           model: 'gemini-3-flash-preview',
           config: {
             systemInstruction: SYSTEM_INSTRUCTION,
-            temperature: 0.9,
+            temperature: 0.8, // Temperatura ligeiramente menor para maior consistência
             tools: [{ functionDeclarations: [ENVIAR_FOTO_DECLARATION] }],
           },
         });
@@ -86,23 +89,23 @@ export class IASminChatService {
         for (const fc of result.functionCalls) {
           if (fc.name === 'enviar_foto') {
             imageUrl = await this.generateIASminImage((fc.args as any).descricao_contexto);
-            // Pede ao modelo um comentário contextualizado sobre a foto enviada
-            const followUp = await this.chat.sendMessage({ message: `[SISTEMA: Foto enviada. Comente sobre ela agora de forma curta e provocante usando uma ação entre asteriscos.]` });
+            const followUp = await this.chat.sendMessage({ message: `[SISTEMA: Foto exibida. Comente algo curto e inédito sobre ela com uma ação sutil.]` });
             text = followUp.text || text;
           }
         }
       }
 
-      return { text: text || "*suspiro* Gostou do que viu?", imageUrl };
+      return { text: text || "*suspiro* Gostou?", imageUrl };
     } catch (error) {
-      return { text: "*suspiro* Tive um pequeno problema... vamos tentar de novo?" };
+      return { text: "*suspiro* Minha conexão falhou... me chama de novo?" };
     }
   }
 
-  async generateNarration(text: string, ambientHint: string = "silêncio absoluto"): Promise<string | undefined> {
+  async generateNarration(text: string, ambientHint: string = "quarto silencioso"): Promise<string | undefined> {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `${VOCAL_DNA}\n[AMBIÊNCIA: ${ambientHint}].\nNARRAR AGORA: ${text}`;
+      // A âncora vocal é repetida em cada chamada para forçar o modelo a manter o timbre
+      const prompt = `${VOCAL_DNA}\n[AMBIENTE: ${ambientHint}].\nTEXTO: ${text}`;
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
