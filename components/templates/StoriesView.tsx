@@ -11,39 +11,39 @@ interface ExtendedStory extends Story {
 const MOCK_STORIES: ExtendedStory[] = [
   { 
     id: '1', 
-    title: 'O Encontro na Chuva', 
-    excerpt: 'O som das gotas batendo no vidro era apenas o pano de fundo para o calor que subia por entre nossas mãos entrelaçadas...', 
-    duration: '12:45', 
-    coverImage: 'https://images.unsplash.com/photo-1522845015757-50bce044e5da?auto=format&fit=crop&q=80&w=800', 
+    title: 'Noite Estelar', 
+    excerpt: 'O céu de Brasília nunca pareceu tão infinito quanto sob o calor da sua pele... *suspiro*', 
+    duration: '08:12', 
+    coverImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800', 
     isDemo: true,
-    ambientHint: 'som de chuva forte batendo na janela, trovões abafados e música jazz melancólica'
+    ambientHint: 'vento suave, grilos ao fundo e música lofi etérea'
   },
   { 
     id: '2', 
-    title: 'Segredos de Escritório', 
-    excerpt: 'A porta se fechou e, pela primeira vez, o silêncio entre nós falou mais alto que qualquer relatório corporativo.', 
-    duration: '15:20', 
-    coverImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800', 
+    title: 'Vinho & Confissões', 
+    excerpt: 'Uma taça, dois segredos e o som da chuva lá fora... *beijo*', 
+    duration: '11:45', 
+    coverImage: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&q=80&w=800', 
     isDemo: false,
-    ambientHint: 'silêncio absoluto, som de respiração próxima e o clique metálico de uma chave girando'
+    ambientHint: 'som de chuva no vidro, vinho sendo servido e jazz suave'
   },
   { 
     id: '3', 
-    title: 'Toque de Seda (Demo)', 
-    excerpt: 'Sinta a suavidade da minha voz enquanto descrevo o início de uma noite inesquecível, onde cada toque é uma promessa...', 
-    duration: '03:00', 
-    coverImage: 'https://images.unsplash.com/photo-1529139513466-470460969242?auto=format&fit=crop&q=80&w=800', 
+    title: 'Toque de Seda', 
+    excerpt: 'Sinta cada palavra como se fosse um carinho real... *risos*', 
+    duration: '04:20', 
+    coverImage: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=800', 
     isDemo: true,
-    ambientHint: 'música lo-fi sensual, som de lençóis de seda se movendo e respiração leve'
+    ambientHint: 'música sensual de sintetizador, respiração próxima'
   },
   { 
     id: '4', 
-    title: 'Champa & Morangos', 
-    excerpt: 'O borbulhar da taça era o único som que ousava interromper a intensidade do nosso olhar.', 
-    duration: '09:30', 
-    coverImage: 'https://images.unsplash.com/photo-1511527661048-7fe73d85e9a4?auto=format&fit=crop&q=80&w=800', 
+    title: 'O Ensaio', 
+    excerpt: 'O clique da câmera era o único que ousava nos observar naquela tarde... *suspiro*', 
+    duration: '15:00', 
+    coverImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&q=80&w=800', 
     isDemo: false,
-    ambientHint: 'som de champanhe sendo servido, cristais se tocando e risadas suaves ao fundo'
+    ambientHint: 'cliques de câmera distantes, silêncio imersivo'
   },
 ];
 
@@ -57,16 +57,10 @@ function decodeBase64(base64: string) {
   return bytes;
 }
 
-async function decodeAudioData(
-  data: Uint8Array,
-  ctx: AudioContext,
-  sampleRate: number,
-  numChannels: number,
-): Promise<AudioBuffer> {
+async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
   const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;
   const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-
   for (let channel = 0; channel < numChannels; channel++) {
     const channelData = buffer.getChannelData(channel);
     for (let i = 0; i < frameCount; i++) {
@@ -82,8 +76,6 @@ const StoriesView: React.FC = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const chatServiceRef = useRef<IASminChatService | null>(null);
-  
-  // CACHE DE ÁUDIO EM MEMÓRIA
   const audioCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
 
   useEffect(() => {
@@ -99,166 +91,69 @@ const StoriesView: React.FC = () => {
     setPlaying(null);
   };
 
-  const playFromBuffer = (buffer: AudioBuffer, storyId: string) => {
-    if (!audioContextRef.current) return;
-    
-    const source = audioContextRef.current.createBufferSource();
-    source.buffer = buffer;
-    source.connect(audioContextRef.current.destination);
-    source.onended = () => setPlaying(null);
-    
-    sourceNodeRef.current = source;
-    source.start(0);
-    setPlaying(storyId);
-  };
-
   const handlePlayDemo = async (story: ExtendedStory) => {
-    if (playing === story.id) {
-      stopAudio();
-      return;
-    }
-
+    if (playing === story.id) { stopAudio(); return; }
     stopAudio();
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-    }
-
-    // VERIFICA SE JÁ ESTÁ NO CACHE
+    if (!audioContextRef.current) audioContextRef.current = new AudioContext({ sampleRate: 24000 });
     if (audioCacheRef.current.has(story.id)) {
-      playFromBuffer(audioCacheRef.current.get(story.id)!, story.id);
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioCacheRef.current.get(story.id)!;
+      source.connect(audioContextRef.current.destination);
+      source.onended = () => setPlaying(null);
+      sourceNodeRef.current = source;
+      source.start(0);
+      setPlaying(story.id);
       return;
     }
-
     setIsLoading(story.id);
-
     try {
       const audioBase64 = await chatServiceRef.current?.generateNarration(story.excerpt, story.ambientHint);
-      
       if (audioBase64) {
-        const audioData = decodeBase64(audioBase64);
-        const audioBuffer = await decodeAudioData(audioData, audioContextRef.current, 24000, 1);
-        
-        // SALVA NO CACHE
-        audioCacheRef.current.set(story.id, audioBuffer);
-        
-        playFromBuffer(audioBuffer, story.id);
+        const buffer = await decodeAudioData(decodeBase64(audioBase64), audioContextRef.current, 24000, 1);
+        audioCacheRef.current.set(story.id, buffer);
+        const source = audioContextRef.current.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioContextRef.current.destination);
+        source.onended = () => setPlaying(null);
+        sourceNodeRef.current = source;
+        source.start(0);
+        setPlaying(story.id);
       }
-    } catch (error) {
-      console.error("Playback error:", error);
-    } finally {
-      setIsLoading(null);
-    }
+    } finally { setIsLoading(null); }
   };
 
   return (
-    <div className="space-y-12 pb-32 md:pb-12 animate-in fade-in duration-700">
+    <div className="space-y-16 pb-32 animate-in fade-in duration-1000">
       <div className="text-center space-y-4">
-        <h2 className="text-4xl font-serif italic text-white">Minhas Histórias</h2>
-        <p className="text-zinc-500 max-w-lg mx-auto">Experiências sonoras imersivas com minha voz exclusiva e ambientação cinematográfica.</p>
+        <h2 className="text-5xl font-serif italic text-white tracking-tight">Experiências Vocais</h2>
+        <div className="w-12 h-px bg-rose-900 mx-auto"></div>
+        <p className="text-zinc-500 text-sm max-w-sm mx-auto uppercase tracking-[0.2em] font-bold">Narração imersiva com áudio neural</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-4">
         {MOCK_STORIES.map((story) => (
-          <div key={story.id} className="group relative bg-zinc-900 rounded-[2.5rem] overflow-hidden border border-white/5 flex flex-col hover:border-rose-500/30 transition-all duration-500">
-            <div className="aspect-[4/5] relative shrink-0 overflow-hidden">
-              <img 
-                src={story.coverImage} 
-                alt={story.title} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60" 
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
-              
-              {!story.isDemo && (
-                <div className="absolute top-4 right-4 bg-rose-600/90 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded backdrop-blur-sm shadow-xl z-20">
-                  VIP
-                </div>
-              )}
-
-              {story.isDemo && (
-                <div className="absolute top-4 left-4 bg-white/10 text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded-full backdrop-blur-md border border-white/10 flex items-center gap-1.5 z-20">
-                  <span className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></span>
-                  Experiência Ativa
-                </div>
-              )}
-              
-              <div className="absolute bottom-4 left-6 right-6 space-y-1 z-20">
-                <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest">{story.duration}</p>
-                <h3 className="text-xl font-bold text-white leading-tight font-serif italic">{story.title}</h3>
+          <div key={story.id} className="group bg-zinc-900/50 rounded-[2.5rem] overflow-hidden border border-white/5 flex flex-col hover:border-rose-800/30 transition-all duration-700">
+            <div className="aspect-[3/4] relative overflow-hidden">
+              <img src={story.coverImage} className="w-full h-full object-cover grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-80 transition-all duration-1000" />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent"></div>
+              <div className="absolute bottom-6 left-6 right-6">
+                <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest mb-1">{story.duration}</p>
+                <h3 className="text-2xl font-serif italic text-white">{story.title}</h3>
               </div>
             </div>
-            
-            <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-              <p className="text-xs text-zinc-500 line-clamp-3 italic leading-relaxed">"{story.excerpt}"</p>
+            <div className="p-8 flex-1 flex flex-col justify-between space-y-6">
+              <p className="text-xs text-zinc-500 italic leading-relaxed line-clamp-2">"{story.excerpt.replace(/\*.*?\*/g, '')}"</p>
               {story.isDemo ? (
-                <Button 
-                  variant={playing === story.id ? 'secondary' : 'primary'} 
-                  className={`w-full text-[10px] h-11 tracking-widest uppercase transition-all duration-500 ${isLoading === story.id ? 'animate-pulse' : ''}`}
-                  onClick={() => handlePlayDemo(story)}
-                  disabled={isLoading !== null && isLoading !== story.id}
-                >
-                  {isLoading === story.id ? 'Preparando...' : playing === story.id ? '⏹️ Parar' : '▶️ Ouvir Demo'}
+                <Button variant={playing === story.id ? 'secondary' : 'primary'} className="w-full text-[10px] tracking-[0.3em] uppercase h-12" onClick={() => handlePlayDemo(story)}>
+                  {isLoading === story.id ? 'Carregando...' : playing === story.id ? 'Parar' : 'Ouvir'}
                 </Button>
               ) : (
-                <Button variant="outline" className="w-full text-[10px] h-11 tracking-widest uppercase">Assinar VIP</Button>
+                <Button variant="outline" className="w-full text-[10px] tracking-[0.3em] uppercase h-12 opacity-50">Desbloquear VIP</Button>
               )}
             </div>
           </div>
         ))}
       </div>
-
-      {playing && (
-        <div className="fixed bottom-24 left-4 right-4 md:bottom-10 md:right-10 md:left-auto md:w-[400px] z-[60] animate-in slide-in-from-bottom-10 duration-500">
-          <div className="relative bg-zinc-950/80 backdrop-blur-[40px] border border-rose-500/20 p-7 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden group">
-            <div className="absolute -top-20 -right-20 w-48 h-48 bg-rose-600/10 blur-[80px] rounded-full group-hover:bg-rose-600/20 transition-all duration-1000"></div>
-            
-            <div className="flex items-center gap-5 relative z-10">
-              <div className="relative shrink-0">
-                <div className="w-16 h-16 bg-gradient-to-tr from-rose-600 to-rose-900 rounded-2xl flex items-center justify-center shadow-lg shadow-rose-900/40 relative z-10 rotate-3 group-hover:rotate-0 transition-transform duration-500">
-                  <span className="text-3xl animate-pulse">💋</span>
-                </div>
-                <div className="absolute inset-0 bg-rose-600 rounded-2xl animate-ping opacity-20"></div>
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-                  <p className="text-[10px] text-rose-400 font-black uppercase tracking-[0.2em]">Sessão Imersiva</p>
-                </div>
-                <p className="text-white text-xl font-serif italic truncate pr-2">
-                  {MOCK_STORIES.find(s => s.id === playing)?.title}
-                </p>
-              </div>
-              
-              <button onClick={stopAudio} className="w-10 h-10 rounded-full bg-white/5 hover:bg-rose-600 hover:text-white text-zinc-500 transition-all flex items-center justify-center border border-white/5">✕</button>
-            </div>
-
-            <div className="mt-6 space-y-3 relative z-10">
-               <div className="flex justify-between items-end">
-                  <span className="text-[9px] text-rose-500/80 font-bold tracking-[0.3em] uppercase">IASmin Narrando</span>
-                  <div className="flex gap-1">
-                     {[...Array(15)].map((_, i) => (
-                       <div key={i} className="w-0.5 h-3 bg-rose-500 rounded-full animate-[soundbar_1s_ease-in-out_infinite]" style={{ animationDelay: `${i * 0.07}s`, height: `${Math.random() * 12 + 4}px` }}></div>
-                     ))}
-                  </div>
-               </div>
-               <div className="relative h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                  <div className="absolute inset-0 bg-gradient-to-r from-rose-800 via-rose-500 to-rose-800 w-full origin-left animate-[progress_30s_linear_infinite]"></div>
-               </div>
-               <div className="flex justify-between text-[9px] text-zinc-600 font-mono tracking-widest">
-                  <span>00:00</span>
-                  <span className="animate-pulse">AUDIO CACHE ACTIVE</span>
-                  <span>{MOCK_STORIES.find(s => s.id === playing)?.duration}</span>
-               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style>{`
-        @keyframes progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-        @keyframes soundbar { 0%, 100% { transform: scaleY(1); opacity: 0.5; } 50% { transform: scaleY(2.2); opacity: 1; } }
-      `}</style>
     </div>
   );
 };

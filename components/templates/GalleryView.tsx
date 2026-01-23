@@ -2,97 +2,58 @@
 import React from 'react';
 import { Photo } from '../../types';
 
-// Unsplash IDs mais sensuais e artísticos (Boudoir, High Fashion, Moody Portraits)
 const UNSPLASH_IDS = [
-  'photo-1519011985187-444d62641929', // Sensual moody
-  'photo-1522845015757-50bce044e5da', // Silhouette body
-  'photo-1529139513466-470460969242', // Artistic lingerie/fashion
-  'photo-1515886657613-9f3515b0c78f', // High fashion portrait
-  'photo-1506634064465-7dab4de896ed', // Moody close up
-  'photo-1494790108377-be9c29b29330', // Sensual expression
-  'photo-1503342217505-b0a15ec3261c', // Skin texture / water
-  'photo-1481824429379-07aa5e5b0739', // B&W Artistic
-  'photo-1469334031218-e382a71b716b', // Movement / silk
-  'photo-1511527661048-7fe73d85e9a4', // Intimate lighting
-  'photo-1524504388940-b1c1722653e1', // Elegant woman portrait
-  'photo-1500648767791-00dcc994a43e', // Strong portrait
+  'photo-1519011985187-444d62641929',
+  'photo-1522845015757-50bce044e5da',
+  'photo-1529139513466-470460969242',
+  'photo-1515886657613-9f3515b0c78f',
+  'photo-1531746020798-e7953eeadff0',
+  'photo-1534528741775-53994a69daeb',
+  'photo-1503342217505-b0a15ec3261c',
+  'photo-1481824429379-07aa5e5b0739',
 ];
 
 const MOCK_PHOTOS: Photo[] = UNSPLASH_IDS.map((id, i) => ({
   id: String(i + 1),
   url: `https://images.unsplash.com/${id}?auto=format&fit=crop&q=80&w=800`,
-  isLocked: i > 2 // Primeiras 3 grátis para teaser
+  isLocked: i > 2
 }));
 
 const GalleryView: React.FC = () => {
   return (
-    <div className="space-y-12 animate-in fade-in duration-700 pb-20">
+    <div className="space-y-16 animate-in fade-in duration-1000 pb-20">
       <div className="text-center space-y-4">
-        <h2 className="text-4xl font-serif italic text-white">Galeria Privada</h2>
-        <p className="text-zinc-500 max-w-lg mx-auto">
-          Minhas visões mais íntimas, reveladas apenas a quem deseja ver além. <br />
-          Capturando a essência do desejo em cada detalhe.
-        </p>
+        <h2 className="text-5xl font-serif italic text-white tracking-tight">Galeria Privada</h2>
+        <div className="w-12 h-px bg-rose-900 mx-auto"></div>
+        <p className="text-zinc-500 text-xs max-w-sm mx-auto uppercase tracking-[0.2em] font-bold">Visões exclusivas da minha intimidade</p>
       </div>
 
-      <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4 px-4">
+      <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6 space-y-6 px-4">
         {MOCK_PHOTOS.map((photo) => (
-          <div 
-            key={photo.id} 
-            className="relative group overflow-hidden rounded-3xl bg-zinc-900 border border-white/5 shadow-2xl transition-all duration-500 hover:border-rose-900/50"
-          >
-            <div className={`aspect-auto overflow-hidden ${photo.isLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-              <img 
-                src={photo.url} 
-                alt="IASmin Exclusive Content" 
-                loading="lazy"
-                className={`w-full h-auto object-cover transition-all duration-1000 transform ${
-                  photo.isLocked 
-                    ? 'blur-[40px] grayscale brightness-75 scale-110' 
-                    : 'group-hover:scale-110 group-hover:brightness-110'
-                }`}
-              />
+          <div key={photo.id} className="relative group overflow-hidden rounded-[2.5rem] bg-zinc-950 border border-white/5 transition-all duration-700 hover:border-rose-900/40">
+            <div className={`overflow-hidden transition-all duration-1000 ${photo.isLocked ? 'blur-md' : 'group-hover:scale-110'}`}>
+              <img src={photo.url} className={`w-full h-auto object-cover opacity-80 ${photo.isLocked ? 'brightness-50' : 'group-hover:opacity-100'}`} />
             </div>
             
-            {/* Locked Overlay / Efeito de Censura */}
-            {photo.isLocked ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-black/20 backdrop-blur-[2px] group-hover:bg-black/40 transition-colors duration-500">
-                <div className="w-14 h-14 bg-rose-600/20 rounded-full flex items-center justify-center backdrop-blur-xl border border-rose-500/30 mb-4 animate-pulse group-hover:scale-110 transition-transform duration-500">
-                  <span className="text-2xl">🔒</span>
+            {photo.isLocked && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-zinc-950/20 backdrop-blur-[2px] hover:bg-zinc-950/10 transition-colors duration-500 cursor-pointer">
+                <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center mb-4 bg-black/40 backdrop-blur-md">
+                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 </div>
-                <div className="space-y-1">
-                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/90 drop-shadow-md">
-                    Censurado
-                  </p>
-                  <p className="text-[9px] text-rose-300/80 font-medium">Desbloqueie para ver o ensaio</p>
-                </div>
-              </div>
-            ) : (
-              /* Hover Info para fotos liberadas */
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end p-6">
-                 <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500 w-full">
-                    <p className="text-white text-xs font-bold tracking-widest uppercase mb-1">Ensaio: Desejo Puro</p>
-                    <button className="text-rose-500 text-[10px] font-bold flex items-center gap-1 hover:text-rose-400 transition-colors uppercase tracking-widest">
-                      Visualizar HD 
-                      <span className="text-lg">→</span>
-                    </button>
-                 </div>
+                <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-white/80">Premium Access</p>
               </div>
             )}
 
-            {/* Brilho sutil no hover */}
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-10 bg-gradient-to-tr from-white/0 via-white/40 to-white/0 pointer-events-none transition-opacity duration-700"></div>
+            {!photo.isLocked && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-end p-8">
+                <button className="text-white text-[9px] font-bold uppercase tracking-[0.3em] flex items-center gap-2">
+                   Ver em HD
+                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </button>
+              </div>
+            )}
           </div>
         ))}
-      </div>
-
-      <div className="pt-12 text-center">
-        <div className="inline-block p-1 rounded-full bg-rose-600/10 border border-rose-600/20 mb-4 px-4 py-2">
-           <p className="text-rose-500 text-[10px] font-bold uppercase tracking-[0.3em]">Novos Ensaios Toda Semana</p>
-        </div>
-        <p className="text-zinc-600 text-xs italic">
-          * Todas as imagens são protegidas por direitos autorais. Reprodução proibida.
-        </p>
       </div>
     </div>
   );
