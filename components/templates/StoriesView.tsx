@@ -34,7 +34,7 @@ const MOCK_STORIES: ExtendedStory[] = [
     duration: '03:00', 
     coverImage: 'https://images.unsplash.com/photo-1529139513466-470460969242?auto=format&fit=crop&q=80&w=800', 
     isDemo: true,
-    ambientHint: 'música lo-fi sensual, som de lençóis de seda se movendo e sussurros ao pé do ouvido'
+    ambientHint: 'música lo-fi sensual, som de lençóis de seda se movendo e respiração leve'
   },
   { 
     id: '4', 

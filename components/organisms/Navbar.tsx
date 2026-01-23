@@ -20,8 +20,8 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
     <>
       {/* Desktop Navbar */}
       <nav className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-lg border-b border-white/5 items-center justify-between px-10 h-16">
-        <div className="text-2xl font-serif text-rose-600 cursor-pointer" onClick={() => onNavigate(View.HOME)}>
-          IASmin
+        <div className="text-4xl font-cursive text-rose-600 cursor-pointer pt-2" onClick={() => onNavigate(View.HOME)}>
+          Iasmin
         </div>
         <div className="flex gap-8">
           {navItems.map((item) => (

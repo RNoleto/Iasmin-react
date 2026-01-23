@@ -12,9 +12,9 @@ const AgeGate: React.FC<AgeGateProps> = ({ onVerify }) => {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-rose-900/20 via-transparent to-transparent opacity-50"></div>
       
       <div className="relative max-w-md w-full text-center space-y-8 bg-zinc-900/50 p-8 rounded-3xl border border-white/5 backdrop-blur-xl">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-serif italic text-rose-500">IASmin</h1>
-          <p className="text-zinc-400 text-sm tracking-widest uppercase">Exclusive Access</p>
+        <div className="space-y-0">
+          <h1 className="text-6xl font-cursive text-rose-500 leading-tight">Iasmin</h1>
+          <p className="text-zinc-400 text-[10px] tracking-[0.4em] uppercase -mt-2">Exclusive Access</p>
         </div>
         
         <div className="space-y-4">
