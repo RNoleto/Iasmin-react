@@ -7,6 +7,12 @@ export enum View {
   SUBSCRIPTION = 'subscription'
 }
 
+export enum SubscriptionLevel {
+  FREE = 'free',
+  INTIMO = 'intimo',
+  ELITE = 'elite'
+}
+
 export interface Story {
   id: string;
   title: string;
@@ -14,12 +20,14 @@ export interface Story {
   duration: string;
   coverImage: string;
   isDemo: boolean;
+  isPremium?: boolean;
 }
 
 export interface Photo {
   id: string;
   url: string;
   isLocked: boolean;
+  isPremium?: boolean;
 }
 
 export interface Message {

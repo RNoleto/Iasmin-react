@@ -36,21 +36,24 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
 
   return (
     <>
-      <nav className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-[#050505]/60 backdrop-blur-3xl border-b border-white/5 items-center justify-between px-16 h-20">
-        <div className="text-xl font-cursive text-rose-600 tracking-[-0.05em] cursor-pointer hover:text-rose-500 transition-colors" onClick={() => onNavigate(View.HOME)}>
+      <nav className="hidden md:flex fixed top-0 left-0 right-0 z-50 bg-[#050505]/40 backdrop-blur-3xl border-b border-white/5 items-center justify-between px-16 h-20">
+        <div className="text-2xl font-cursive text-rose-600 tracking-[-0.05em] cursor-pointer hover:text-rose-500 transition-colors neon-text-rose" onClick={() => onNavigate(View.HOME)}>
           Iasmin
         </div>
-        <div className="flex gap-14">
+        <div className="flex gap-14 h-full">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex flex-col items-center gap-1.5 transition-all group ${
-                currentView === item.id ? 'text-rose-500' : 'text-zinc-700'
+              className={`flex flex-col items-center justify-center gap-1.5 transition-all group relative ${
+                currentView === item.id ? 'text-rose-500' : 'text-zinc-600 hover:text-zinc-400'
               }`}
             >
               <div className="transition-transform duration-500 group-hover:scale-110">{item.icon}</div>
               <span className="text-[7px] uppercase tracking-[0.4em] font-bold">{item.label}</span>
+              {currentView === item.id && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-[2px] bg-rose-600 shadow-[0_0_10px_rgba(225,29,72,0.8)] rounded-full"></div>
+              )}
             </button>
           ))}
         </div>
@@ -63,12 +66,15 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex flex-col items-center gap-2 transition-all ${
-                currentView === item.id ? 'text-rose-500 scale-110' : 'text-zinc-800'
+              className={`flex flex-col items-center gap-2 transition-all relative ${
+                currentView === item.id ? 'text-rose-500 scale-110' : 'text-zinc-700'
               }`}
             >
               {item.icon}
               <span className="text-[6px] font-bold uppercase tracking-[0.3em]">{item.label}</span>
+              {currentView === item.id && (
+                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-rose-600/20 blur-md rounded-full"></div>
+              )}
             </button>
           ))}
         </div>

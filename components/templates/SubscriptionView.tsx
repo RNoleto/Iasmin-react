@@ -1,90 +1,103 @@
 
 import React from 'react';
 import Button from '../atoms/Button';
+import { SubscriptionLevel } from '../../types';
 
-const PLANS = [
-  {
-    name: 'Silver',
-    price: 'R$ 29,90',
-    period: 'mês',
-    benefits: ['Acesso a 5 histórias exclusivas', 'Galeria básica (30 fotos)', 'Chat limitado (10 msgs/dia)'],
-    recommended: false,
-    color: 'zinc-400'
-  },
-  {
-    name: 'Gold',
-    price: 'R$ 59,90',
-    period: 'mês',
-    benefits: ['Todas as histórias narradas', 'Galeria completa (HD)', 'Chat prioritário ilimitado', 'Novas histórias semanais'],
-    recommended: true,
-    color: 'rose-500'
-  },
-  {
-    name: 'Diamond',
-    price: 'R$ 499,90',
-    period: 'ano',
-    benefits: ['Tudo do plano Gold', 'Peça uma história personalizada', 'Conteúdo 4K exclusivo', 'Brindes físicos semestrais'],
-    recommended: false,
-    color: 'sky-400'
-  }
-];
+interface SubscriptionViewProps {
+  onSubscribe: (level: SubscriptionLevel) => void;
+}
 
-const SubscriptionView: React.FC = () => {
+const SubscriptionView: React.FC<SubscriptionViewProps> = ({ onSubscribe }) => {
+  const plans = [
+    {
+      id: SubscriptionLevel.FREE,
+      name: "Essencial",
+      price: "R$ 0",
+      period: "Para sempre",
+      features: ["Acesso a 1 História Demo", "Chat limitado (5 msg/dia)", "Galeria básica", "Voz padrão"],
+      button: "Começar Grátis",
+      popular: false,
+      color: "zinc"
+    },
+    {
+      id: SubscriptionLevel.INTIMO,
+      name: "Íntimo",
+      price: "R$ 49",
+      period: "/ mês",
+      features: ["Todas as Histórias (Voz)", "Chat Ilimitado", "Galeria Completa", "Fotos em tempo real", "Sem anúncios"],
+      button: "Assinar Agora",
+      popular: true,
+      color: "rose"
+    },
+    {
+      id: SubscriptionLevel.ELITE,
+      name: "Elite VIP",
+      price: "R$ 399",
+      period: "/ ano",
+      features: ["Tudo do Plano Íntimo", "Prioridade Absoluta", "Pedidos de Áudio Customizados", "Acesso Antecipado", "Selo VIP no Perfil"],
+      button: "Tornar-se Elite",
+      popular: false,
+      color: "amber"
+    }
+  ];
+
   return (
-    <div className="space-y-16 py-8">
-      <div className="text-center space-y-4">
-        <h2 className="text-4xl font-serif italic text-white">Escolha seu Nível</h2>
-        <p className="text-zinc-500 max-w-lg mx-auto">Garanta seu acesso VIP ao mundo de IASmin e desbloqueie todos os segredos.</p>
+    <div className="space-y-20 py-12 animate-in fade-in duration-1000">
+      <div className="text-center space-y-6">
+        <h2 className="text-6xl font-serif italic text-white tracking-tighter neon-text-rose">Escolha seu Nível</h2>
+        <p className="text-zinc-500 text-sm tracking-[0.2em] uppercase font-light">O quão perto você quer chegar?</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-        {PLANS.map((plan) => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4">
+        {plans.map((plan) => (
           <div 
-            key={plan.name} 
-            className={`relative p-8 rounded-3xl border ${
-              plan.recommended ? 'border-rose-600 bg-rose-950/10 scale-105 z-10' : 'border-white/5 bg-zinc-900/40'
-            } transition-transform hover:scale-[1.02]`}
+            key={plan.id}
+            className={`relative group p-10 rounded-[3.5rem] bg-[#030303] border transition-all duration-700 flex flex-col justify-between ${
+              plan.popular ? 'border-rose-900/50 shadow-[0_0_50px_rgba(225,29,72,0.1)] scale-105 z-10' : 'border-white/5 hover:border-white/10'
+            } ${plan.id === SubscriptionLevel.ELITE ? 'hover:border-amber-900/40 shadow-[0_0_50px_rgba(245,158,11,0.05)]' : ''}`}
           >
-            {plan.recommended && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-rose-600 text-white text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full">
-                Mais Popular
+            {plan.popular && (
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-rose-700 text-white text-[9px] font-bold uppercase tracking-[0.3em] px-6 py-2 rounded-full shadow-xl neon-border-rose">
+                Mais Desejado
               </div>
             )}
-            
-            <div className="mb-8 space-y-2">
-              <h3 className={`text-2xl font-bold text-${plan.color}`}>{plan.name}</h3>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold text-white">{plan.price}</span>
-                <span className="text-zinc-500 text-sm">/{plan.period}</span>
+
+            <div className="space-y-8">
+              <div className="text-center space-y-2">
+                <h3 className={`text-2xl font-serif italic ${plan.id === SubscriptionLevel.ELITE ? 'text-amber-500' : 'text-white'}`}>{plan.name}</h3>
+                <div className="flex items-end justify-center gap-1">
+                  <span className="text-4xl font-bold tracking-tighter">{plan.price}</span>
+                  <span className="text-[10px] text-zinc-600 uppercase tracking-widest pb-1.5">{plan.period}</span>
+                </div>
               </div>
+
+              <div className="h-[1px] w-full bg-white/5"></div>
+
+              <ul className="space-y-5">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex gap-4 text-[13px] text-zinc-500 font-light items-start">
+                    <span className={plan.id === SubscriptionLevel.ELITE ? 'text-amber-600' : 'text-rose-700'}>✦</span>
+                    {feature}
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            <ul className="space-y-4 mb-10">
-              {plan.benefits.map((benefit, i) => (
-                <li key={i} className="flex gap-3 text-sm text-zinc-400">
-                  <span className="text-rose-500">✓</span>
-                  {benefit}
-                </li>
-              ))}
-            </ul>
-
-            <Button variant={plan.recommended ? 'primary' : 'outline'} className="w-full">
-              Assinar Agora
+            <Button 
+              variant={plan.popular ? 'primary' : 'outline'} 
+              className={`w-full h-16 mt-12 text-[10px] uppercase tracking-[0.3em] ${
+                plan.id === SubscriptionLevel.ELITE ? 'border-amber-900/30 text-amber-500 hover:bg-amber-900/10' : ''
+              }`}
+              onClick={() => onSubscribe(plan.id)}
+            >
+              {plan.button}
             </Button>
           </div>
         ))}
       </div>
 
-      <div className="max-w-2xl mx-auto bg-zinc-900/30 p-8 rounded-3xl border border-white/5 text-center">
-        <h3 className="text-xl font-bold mb-4">Pagamento Seguro e Discreto</h3>
-        <p className="text-zinc-500 text-sm leading-relaxed mb-6">
-          Sua fatura aparecerá como "ASSINATURA DIGITAL" para garantir total privacidade. Aceitamos Pix, Cartão e Cripto.
-        </p>
-        <div className="flex justify-center gap-4 opacity-40 grayscale contrast-125">
-           <span className="text-2xl">💳</span>
-           <span className="text-2xl">📱</span>
-           <span className="text-2xl">₿</span>
-        </div>
+      <div className="max-w-2xl mx-auto text-center">
+        <p className="text-[10px] text-zinc-800 uppercase tracking-[0.4em] mb-4">Pagamento Seguro & Sigilo Absoluto</p>
       </div>
     </div>
   );
