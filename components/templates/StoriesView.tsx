@@ -82,6 +82,9 @@ const StoriesView: React.FC = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const chatServiceRef = useRef<IASminChatService | null>(null);
+  
+  // CACHE DE ÁUDIO EM MEMÓRIA
+  const audioCacheRef = useRef<Map<string, AudioBuffer>>(new Map());
 
   useEffect(() => {
     chatServiceRef.current = new IASminChatService();
@@ -96,6 +99,19 @@ const StoriesView: React.FC = () => {
     setPlaying(null);
   };
 
+  const playFromBuffer = (buffer: AudioBuffer, storyId: string) => {
+    if (!audioContextRef.current) return;
+    
+    const source = audioContextRef.current.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContextRef.current.destination);
+    source.onended = () => setPlaying(null);
+    
+    sourceNodeRef.current = source;
+    source.start(0);
+    setPlaying(storyId);
+  };
+
   const handlePlayDemo = async (story: ExtendedStory) => {
     if (playing === story.id) {
       stopAudio();
@@ -103,28 +119,30 @@ const StoriesView: React.FC = () => {
     }
 
     stopAudio();
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    }
+
+    // VERIFICA SE JÁ ESTÁ NO CACHE
+    if (audioCacheRef.current.has(story.id)) {
+      playFromBuffer(audioCacheRef.current.get(story.id)!, story.id);
+      return;
+    }
+
     setIsLoading(story.id);
 
     try {
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-      }
-
       const audioBase64 = await chatServiceRef.current?.generateNarration(story.excerpt, story.ambientHint);
       
       if (audioBase64) {
         const audioData = decodeBase64(audioBase64);
         const audioBuffer = await decodeAudioData(audioData, audioContextRef.current, 24000, 1);
         
-        const source = audioContextRef.current.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContextRef.current.destination);
+        // SALVA NO CACHE
+        audioCacheRef.current.set(story.id, audioBuffer);
         
-        source.onended = () => setPlaying(null);
-
-        sourceNodeRef.current = source;
-        source.start(0);
-        setPlaying(story.id);
+        playFromBuffer(audioBuffer, story.id);
       }
     } catch (error) {
       console.error("Playback error:", error);
@@ -143,7 +161,6 @@ const StoriesView: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
         {MOCK_STORIES.map((story) => (
           <div key={story.id} className="group relative bg-zinc-900 rounded-[2.5rem] overflow-hidden border border-white/5 flex flex-col hover:border-rose-500/30 transition-all duration-500">
-            {/* O segredo está no overflow-hidden deste contêiner relativo */}
             <div className="aspect-[4/5] relative shrink-0 overflow-hidden">
               <img 
                 src={story.coverImage} 
@@ -193,8 +210,6 @@ const StoriesView: React.FC = () => {
       {playing && (
         <div className="fixed bottom-24 left-4 right-4 md:bottom-10 md:right-10 md:left-auto md:w-[400px] z-[60] animate-in slide-in-from-bottom-10 duration-500">
           <div className="relative bg-zinc-950/80 backdrop-blur-[40px] border border-rose-500/20 p-7 rounded-[2.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.8)] overflow-hidden group">
-            
-            {/* Animated Glow Background */}
             <div className="absolute -top-20 -right-20 w-48 h-48 bg-rose-600/10 blur-[80px] rounded-full group-hover:bg-rose-600/20 transition-all duration-1000"></div>
             
             <div className="flex items-center gap-5 relative z-10">
@@ -213,22 +228,9 @@ const StoriesView: React.FC = () => {
                 <p className="text-white text-xl font-serif italic truncate pr-2">
                   {MOCK_STORIES.find(s => s.id === playing)?.title}
                 </p>
-                <div className="flex items-center gap-2 mt-1">
-                   <span className="text-[9px] text-zinc-500 font-medium uppercase tracking-widest">Ambiência Ativa</span>
-                   <div className="flex gap-0.5 items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className="w-0.5 h-2 bg-rose-500/40 rounded-full"></div>
-                      ))}
-                   </div>
-                </div>
               </div>
               
-              <button 
-                onClick={stopAudio} 
-                className="w-10 h-10 rounded-full bg-white/5 hover:bg-rose-600 hover:text-white text-zinc-500 transition-all flex items-center justify-center border border-white/5"
-              >
-                ✕
-              </button>
+              <button onClick={stopAudio} className="w-10 h-10 rounded-full bg-white/5 hover:bg-rose-600 hover:text-white text-zinc-500 transition-all flex items-center justify-center border border-white/5">✕</button>
             </div>
 
             <div className="mt-6 space-y-3 relative z-10">
@@ -236,25 +238,16 @@ const StoriesView: React.FC = () => {
                   <span className="text-[9px] text-rose-500/80 font-bold tracking-[0.3em] uppercase">IASmin Narrando</span>
                   <div className="flex gap-1">
                      {[...Array(15)].map((_, i) => (
-                       <div 
-                         key={i} 
-                         className="w-0.5 h-3 bg-rose-500 rounded-full animate-[soundbar_1s_ease-in-out_infinite]"
-                         style={{ 
-                           animationDelay: `${i * 0.07}s`, 
-                           height: `${Math.random() * 12 + 4}px` 
-                         }}
-                       ></div>
+                       <div key={i} className="w-0.5 h-3 bg-rose-500 rounded-full animate-[soundbar_1s_ease-in-out_infinite]" style={{ animationDelay: `${i * 0.07}s`, height: `${Math.random() * 12 + 4}px` }}></div>
                      ))}
                   </div>
                </div>
-               
                <div className="relative h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
                   <div className="absolute inset-0 bg-gradient-to-r from-rose-800 via-rose-500 to-rose-800 w-full origin-left animate-[progress_30s_linear_infinite]"></div>
                </div>
-               
                <div className="flex justify-between text-[9px] text-zinc-600 font-mono tracking-widest">
                   <span>00:00</span>
-                  <span className="animate-pulse">LIVE AUDIO</span>
+                  <span className="animate-pulse">AUDIO CACHE ACTIVE</span>
                   <span>{MOCK_STORIES.find(s => s.id === playing)?.duration}</span>
                </div>
             </div>
@@ -263,14 +256,8 @@ const StoriesView: React.FC = () => {
       )}
 
       <style>{`
-        @keyframes progress {
-          from { transform: scaleX(0); }
-          to { transform: scaleX(1); }
-        }
-        @keyframes soundbar {
-          0%, 100% { transform: scaleY(1); opacity: 0.5; }
-          50% { transform: scaleY(2.2); opacity: 1; }
-        }
+        @keyframes progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        @keyframes soundbar { 0%, 100% { transform: scaleY(1); opacity: 0.5; } 50% { transform: scaleY(2.2); opacity: 1; } }
       `}</style>
     </div>
   );
