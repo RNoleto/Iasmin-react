@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Message } from '../../types';
-import { IASminChatService } from '../../services/geminiService';
+import { IASminChatService, ChatResult } from '../../services/geminiService';
 import Button from '../atoms/Button';
 
 function decodeBase64(base64: string) {
@@ -117,10 +117,11 @@ const ChatView: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await chatServiceRef.current?.sendMessage(userText);
+      const response: ChatResult = await chatServiceRef.current?.sendMessage(userText) || { text: "Hum..." };
       const modelMessage: Message = { 
         role: 'model', 
-        text: response || "Me conte mais...", 
+        text: response.text,
+        imageUrl: response.imageUrl,
         timestamp: new Date() 
       };
       setMessages(prev => [...prev, modelMessage]);
@@ -144,9 +145,12 @@ const ChatView: React.FC = () => {
                <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest mt-1">Online agora</p>
             </div>
          </div>
+         <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">
+            Criptografia de ponta
+         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 scrollbar-hide">
         {messages.map((msg, idx) => (
           <div 
             key={idx} 
@@ -161,7 +165,17 @@ const ChatView: React.FC = () => {
                 </button>
             )}
             
-            <div className={`max-w-[80%] space-y-1`}>
+            <div className={`max-w-[85%] space-y-2`}>
+              {msg.imageUrl && (
+                <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl animate-in zoom-in-95 duration-500 origin-bottom-left">
+                  <img 
+                    src={msg.imageUrl} 
+                    alt="IASmin" 
+                    className="w-full h-auto max-h-72 object-cover hover:scale-105 transition-transform duration-700"
+                  />
+                </div>
+              )}
+              
               <div className={`
                 p-3.5 px-5 rounded-2xl text-sm md:text-[15px] leading-snug transition-all
                 ${msg.role === 'user' 
@@ -179,6 +193,7 @@ const ChatView: React.FC = () => {
                 <div className="w-1 h-1 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                 <div className="w-1 h-1 bg-rose-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                 <div className="w-1 h-1 bg-rose-500 rounded-full animate-bounce"></div>
+                <span className="text-[10px] text-zinc-500 font-bold uppercase ml-2">Iasmin está digitando...</span>
             </div>
           </div>
         )}
@@ -191,7 +206,7 @@ const ChatView: React.FC = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Diga algo..."
+            placeholder="Peça uma foto ou diga algo..."
             className="flex-1 bg-zinc-900/80 border border-white/10 rounded-full py-3 px-6 focus:outline-none focus:border-rose-900/50 transition-all text-sm placeholder:text-zinc-600"
           />
           <button 

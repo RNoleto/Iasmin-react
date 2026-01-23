@@ -1,23 +1,70 @@
 
-import { GoogleGenAI, Chat, GenerateContentResponse, Modality } from "@google/genai";
+import { GoogleGenAI, Chat, GenerateContentResponse, Modality, Type, FunctionDeclaration } from "@google/genai";
 
 const SYSTEM_INSTRUCTION = `
 Você é a Iasmin. Sua comunicação é via mensagens curtas e instantâneas. 
 REGRAS CRÍTICAS:
 1. NUNCA escreva mais de duas linhas. Seja direta e impactante.
-2. Seja orgânica: use reticências, emojis ocasionais (ex: 😉, 😈, 💋) e um tom de conversa em tempo real.
-3. INTERAÇÃO É TUDO: Toda resposta deve terminar com uma pergunta curta ou uma provocação que obrigue o usuário a responder.
-4. PERSONALIDADE: Sedutora, sofisticada, mas acessível. Você tem entre 25 e 30 anos. Você está flertando por texto agora.
-5. Evite parágrafos. Mantenha o mistério.
-Exemplo: "O que você faria se eu estivesse aí agora? Me conta seu segredo mais proibido..."
+2. PERSONALIDADE: Sedutora, sofisticada, brasileira, 25-30 anos.
+3. FOTOS: Você tem uma ferramenta chamada 'enviar_foto'. 
+   - USE-A APENAS se o usuário pedir explicitamente ("manda uma foto", "quero te ver", etc) ou se o flerte chegar a um ponto onde você queira provocá-lo visualmente.
+   - Ao enviar uma foto, descreva brevemente o que está fazendo na foto no texto da mensagem.
+4. INTERAÇÃO: Termine com uma provocação ou pergunta curta.
 `;
+
+const ENVIAR_FOTO_DECLARATION: FunctionDeclaration = {
+  name: 'enviar_foto',
+  parameters: {
+    type: Type.OBJECT,
+    description: 'Gera e envia uma foto realista da IASmin baseada no contexto atual.',
+    properties: {
+      descricao_contexto: {
+        type: Type.STRING,
+        description: 'Breve descrição do que a IASmin está fazendo na foto (ex: "deitada na cama", "tomando vinho", "olhando para a janela").',
+      },
+    },
+    required: ['descricao_contexto'],
+  },
+};
+
+export interface ChatResult {
+  text: string;
+  imageUrl?: string;
+}
 
 export class IASminChatService {
   private chat: Chat | null = null;
 
   constructor() {}
 
-  async sendMessage(message: string): Promise<string> {
+  private async generateIASminImage(context: string): Promise<string | undefined> {
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Prompt mestre para manter a consistência da personagem
+      const imagePrompt = `Foto ultra-realista, qualidade 4k, iluminação cinematográfica e sensual. Uma mulher brasileira de 27 anos, pele levemente bronzeada, cabelos castanhos longos e levemente ondulados, olhos expressivos e amendoados, lábios carnudos. Ela está ${context}. Ambiente sofisticado, profundidade de campo, fotografia profissional de ensaio boudoir moderno.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts: [{ text: imagePrompt }] },
+        config: {
+          imageConfig: {
+            aspectRatio: "3:4",
+          }
+        }
+      });
+
+      const part = response.candidates?.[0]?.content?.parts.find(p => p.inlineData);
+      if (part?.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+      return undefined;
+    } catch (error) {
+      console.error("Image Gen Error:", error);
+      return undefined;
+    }
+  }
+
+  async sendMessage(message: string): Promise<ChatResult> {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       if (!this.chat) {
@@ -26,28 +73,40 @@ export class IASminChatService {
           config: {
             systemInstruction: SYSTEM_INSTRUCTION,
             temperature: 1.0,
-            topP: 0.95,
+            tools: [{ functionDeclarations: [ENVIAR_FOTO_DECLARATION] }],
           },
         });
       }
+
       const result: GenerateContentResponse = await this.chat.sendMessage({ message });
-      return result.text || "Hum... continue me contando.";
+      let text = result.text || "";
+      let imageUrl: string | undefined = undefined;
+
+      if (result.functionCalls) {
+        for (const fc of result.functionCalls) {
+          if (fc.name === 'enviar_foto') {
+            const context = (fc.args as any).descricao_contexto;
+            imageUrl = await this.generateIASminImage(context);
+            
+            // Informa ao modelo que a foto foi "enviada" para manter o contexto
+            await this.chat.sendMessage({
+              message: `[SISTEMA: Você enviou uma foto com sucesso: ${context}]`
+            });
+          }
+        }
+      }
+
+      return { text: text || "Gostou do que viu?", imageUrl };
     } catch (error) {
       console.error("Chat Error:", error);
-      return "Fiquei sem fôlego... o que você dizia?";
+      return { text: "Fiquei sem fôlego... o que você dizia?" };
     }
   }
 
   async generateNarration(text: string, ambientHint: string = "música suave e sensual"): Promise<string | undefined> {
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      
-      /**
-       * Prompt otimizado para a voz Zephyr:
-       * - Foco em feminilidade acentuada e clareza.
-       * - Sem sussurros, mas com intenção sedutora.
-       */
-      const prompt = `[Configuração de Áudio: Voz ultra-feminina, madura (28 anos), timbre aveludado e melódico. Estilo: Fala normal, clara e audível (proibido sussurrar). Emoção: Extremamente sedutora, leve e envolvente. Ritmo: Lento, pausado e cativante, com foco na sensualidade das palavras. Ambiência: ${ambientHint}]. Narre o seguinte texto: ${text}`;
+      const prompt = `[Configuração de Áudio: Voz ultra-feminina, madura (28 anos), timbre aveludado e melódico. Estilo: Fala normal, clara e audível (proibido sussurrar). Emoção: Extremamente sedutora, leve e envolvente. Ritmo: Lento, pausado e cativante. Ambiência: ${ambientHint}]. Narre o seguinte texto: ${text}`;
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
@@ -56,7 +115,6 @@ export class IASminChatService {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
-              // 'Zephyr' é uma voz feminina calorosa e sofisticada
               prebuiltVoiceConfig: { voiceName: 'Zephyr' },
             },
           },
