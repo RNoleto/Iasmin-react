@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Chat, GenerateContentResponse, Modality, Type, FunctionDeclaration } from "@google/genai";
+import { GoogleGenAI, Chat, GenerateContentResponse, Modality } from "@google/genai";
 
 export const IASMIN_VISUAL_DNA = "Brazilian woman, 27 years old, tanned skin, honey-colored eyes, long wavy dark brown hair, small beauty mark (mole) just above the left side of her upper lip. Style: Elegant, sophisticated, alluring, cinematic lighting.";
 
@@ -20,72 +20,57 @@ export interface ChatResult {
   imageUrl?: string;
 }
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export class IASminChatService {
   private chat: Chat | null = null;
 
-  constructor() {
-    // Check for API key in the environment as per the guidelines.
-    if (!process.env.API_KEY) {
-      console.warn("⚠️ IASMIN: API_KEY não detectada no ambiente.");
-    }
-  }
-
-  // Sends a text message to the Gemini model and returns the response.
   async sendMessage(message: string): Promise<ChatResult> {
-    const key = process.env.API_KEY;
-    if (!key) return { text: "Erro de conexão neural. Verifique sua API_KEY." };
-
     try {
-      const ai = new GoogleGenAI({ apiKey: key });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       if (!this.chat) {
         this.chat = ai.chats.create({
           model: 'gemini-3-flash-preview',
-          config: { systemInstruction: SYSTEM_INSTRUCTION, temperature: 0.85 },
+          config: { 
+            systemInstruction: SYSTEM_INSTRUCTION, 
+            temperature: 0.85 
+          },
         });
       }
-      const result: GenerateContentResponse = await this.chat.sendMessage({ message });
-      // Direct access to .text property as per guidelines.
-      return { text: result.text || "" };
+      const response = await this.chat.sendMessage({ message });
+      return { text: response.text || "" };
     } catch (error) {
-      console.error(error);
-      return { text: "Minha mente divagou... pode repetir?" };
+      console.error("Erro no chat:", error);
+      return { text: "*te olho com um ar de mistério* Algo interrompeu nosso clima... tente de novo?" };
     }
   }
 
-  // Generates audio narration using the Gemini TTS model.
   async generateNarration(text: string, ambientHint: string = "quarto"): Promise<string | undefined> {
-    const key = process.env.API_KEY;
-    if (!key) return undefined;
     try {
-      const ai = new GoogleGenAI({ apiKey: key });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = `${VOCAL_DNA}\n[AMBIÊNCIA: ${ambientHint}]. TEXTO COMPLETO (INCLUINDO AÇÕES): ${text}`;
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
         contents: [{ parts: [{ text: prompt }] }],
         config: {
           responseModalities: [Modality.AUDIO],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Zephyr' } } },
+          speechConfig: { 
+            voiceConfig: { 
+              prebuiltVoiceConfig: { voiceName: 'Zephyr' } 
+            } 
+          },
         },
       });
-      // Extracts raw PCM audio data from the response part.
       return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     } catch (error) {
+      console.error("Erro na narração:", error);
       return undefined;
     }
   }
 
-  // Generates an image using gemini-2.5-flash-image, incorporating character DNA.
   async generateImage(prompt: string, aspectRatio: string = "1:1"): Promise<string | undefined> {
-    const key = process.env.API_KEY;
-    if (!key) return undefined;
     try {
-      const ai = new GoogleGenAI({ apiKey: key });
-      
-      // Combine character visual identity with the provided prompt.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const actualPrompt = prompt.startsWith('id:') 
-        ? `${IASMIN_VISUAL_DNA} em uma pose elegante e sedutora em um ambiente luxuoso.`
+        ? `${IASMIN_VISUAL_DNA} em uma cena cinematográfica de alta qualidade.`
         : `${IASMIN_VISUAL_DNA} ${prompt}`;
 
       const response = await ai.models.generateContent({
@@ -93,22 +78,20 @@ export class IASminChatService {
         contents: { parts: [{ text: actualPrompt }] },
         config: {
           imageConfig: {
-            // @ts-ignore - aspectRatio is a string like "16:9"
+            // @ts-ignore
             aspectRatio: aspectRatio,
           },
         },
       });
 
-      // Find the image part in the response candidates.
       for (const part of response.candidates?.[0]?.content?.parts || []) {
         if (part.inlineData) {
-          const base64EncodeString: string = part.inlineData.data;
-          return `data:image/png;base64,${base64EncodeString}`;
+          return `data:image/png;base64,${part.inlineData.data}`;
         }
       }
       return undefined;
     } catch (error) {
-      console.error("Error generating image:", error);
+      console.error("Erro na imagem:", error);
       return undefined;
     }
   }

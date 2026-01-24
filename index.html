@@ -7,10 +7,6 @@
     <title>Iasmin | Histórias Exclusivas</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@200..800&family=Parisienne&display=swap" rel="stylesheet">
-    <script>
-      // Shim para garantir que o código não quebre antes do carregamento do Vite
-      window.process = window.process || { env: {} };
-    </script>
     <style>
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
@@ -34,19 +30,18 @@
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
 </head>
   <body>
     <div id="root"></div>
-    <!-- Ponto de entrada crucial para o funcionamento na Vercel -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
