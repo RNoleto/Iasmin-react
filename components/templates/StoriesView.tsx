@@ -78,11 +78,21 @@ const StoriesView: React.FC<StoriesViewProps> = ({ subLevel, onNavigate }) => {
     
     const loadCovers = async () => {
       const updatedStories = [...BASE_STORIES];
+      // Carrega uma por uma com pequeno delay para não estourar a cota de vez
       for (let i = 0; i < updatedStories.length; i++) {
-        const img = await chatServiceRef.current!.generateImage(`id:${updatedStories[i].unsplashId}`, "3:4");
-        if (img) updatedStories[i].coverImage = img;
+        try {
+          const img = await chatServiceRef.current!.generateImage(`id:${updatedStories[i].unsplashId}`, "3:4");
+          if (img) {
+            updatedStories[i].coverImage = img;
+            setStories([...updatedStories]);
+          }
+          await new Promise(r => setTimeout(r, 800)); // Delay preventivo para cota
+        } catch (e) {
+          // Fallback manual caso o service falhe totalmente
+          updatedStories[i].coverImage = `https://images.unsplash.com/${updatedStories[i].unsplashId}?auto=format&fit=crop&q=80`;
+          setStories([...updatedStories]);
+        }
       }
-      setStories(updatedStories);
       setGeneratingImages(false);
     };
 
@@ -196,7 +206,6 @@ const StoriesView: React.FC<StoriesViewProps> = ({ subLevel, onNavigate }) => {
               </p>
               <button 
                 onClick={() => handlePlayDemo(story)}
-                disabled={generatingImages}
                 className={`w-full h-16 rounded-full text-[11px] font-bold uppercase tracking-[0.4em] transition-all border flex items-center justify-center gap-4 ${
                   playing === story.id 
                   ? 'bg-rose-900 border-rose-800 text-white neon-border-rose' 

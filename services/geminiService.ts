@@ -23,11 +23,14 @@ export interface ChatResult {
 export class IASminChatService {
   private chat: Chat | null = null;
 
+  private get ai() {
+    return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  }
+
   async sendMessage(message: string): Promise<ChatResult> {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       if (!this.chat) {
-        this.chat = ai.chats.create({
+        this.chat = this.ai.chats.create({
           model: 'gemini-3-flash-preview',
           config: { 
             systemInstruction: SYSTEM_INSTRUCTION, 
@@ -37,17 +40,20 @@ export class IASminChatService {
       }
       const response = await this.chat.sendMessage({ message });
       return { text: response.text || "" };
-    } catch (error) {
-      console.error("Erro no chat:", error);
-      return { text: "*te olho com um ar de mistério* Algo interrompeu nosso clima... tente de novo?" };
+    } catch (error: any) {
+      if (error.message?.includes("429")) {
+        console.error("🚨 [IASMIN API] COTA DE TEXTO ESGOTADA (429): Você está usando o Free Tier. Aguarde alguns segundos ou use uma chave com faturamento ativado.");
+        return { text: "*te olho com um brilho malicioso* Estou um pouco sem fôlego agora... me dê um segundinho?" };
+      }
+      console.error("❌ [IASMIN API] Erro desconhecido no chat:", error);
+      return { text: "*ajusto meu vestido* Algo me distraiu... pode repetir?" };
     }
   }
 
   async generateNarration(text: string, ambientHint: string = "quarto"): Promise<string | undefined> {
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = `${VOCAL_DNA}\n[AMBIÊNCIA: ${ambientHint}]. TEXTO COMPLETO (INCLUINDO AÇÕES): ${text}`;
-      const response = await ai.models.generateContent({
+      const response = await this.ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
         contents: [{ parts: [{ text: prompt }] }],
         config: {
@@ -60,20 +66,24 @@ export class IASminChatService {
         },
       });
       return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    } catch (error) {
-      console.error("Erro na narração:", error);
+    } catch (error: any) {
+      if (error.message?.includes("429")) {
+        console.error("🚨 [IASMIN API] COTA DE ÁUDIO (TTS) ESGOTADA (429).");
+      }
       return undefined;
     }
   }
 
   async generateImage(prompt: string, aspectRatio: string = "1:1"): Promise<string | undefined> {
+    const isUnsplashId = prompt.startsWith('id:');
+    const unsplashId = isUnsplashId ? prompt.replace('id:', '') : null;
+
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const actualPrompt = prompt.startsWith('id:') 
+      const actualPrompt = isUnsplashId 
         ? `${IASMIN_VISUAL_DNA} em uma cena cinematográfica de alta qualidade.`
         : `${IASMIN_VISUAL_DNA} ${prompt}`;
 
-      const response = await ai.models.generateContent({
+      const response = await this.ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: { parts: [{ text: actualPrompt }] },
         config: {
@@ -89,9 +99,19 @@ export class IASminChatService {
           return `data:image/png;base64,${part.inlineData.data}`;
         }
       }
+      
+      if (unsplashId) return `https://images.unsplash.com/${unsplashId}?auto=format&fit=crop&q=80`;
       return undefined;
-    } catch (error) {
-      console.error("Erro na imagem:", error);
+    } catch (error: any) {
+      if (error.message?.includes("429")) {
+        console.warn(`⚠️ [IASMIN API] COTA DE IMAGEM ESGOTADA (429). Ativando fallback Unsplash para o ID: ${unsplashId || 'Geral'}.`);
+      } else {
+        console.error("❌ [IASMIN API] Erro na geração de imagem:", error);
+      }
+      
+      if (unsplashId) {
+        return `https://images.unsplash.com/${unsplashId}?auto=format&fit=crop&q=80`;
+      }
       return undefined;
     }
   }
