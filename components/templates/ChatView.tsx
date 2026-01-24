@@ -41,7 +41,7 @@ const ChatView: React.FC<ChatViewProps> = ({ subLevel, onNavigate }) => {
   const [messages, setMessages] = useState<Message[]>([
     { 
       role: 'model', 
-      text: '*estou sentada no meu sofá de veludo, balançando levemente uma taça de vinho e olhando para a porta quando você entra* Sabe... eu estava justamente pensando em você. Demorou para aparecer hoje... *sorrio de canto, te convidando a sentar ao meu lado*', 
+      text: '*suspiro suave e risinho* Sabe... eu estava justamente pensando em você. Demorou para aparecer hoje... Me conta, o que te trouxe aqui agora?', 
       timestamp: new Date() 
     }
   ]);
@@ -99,6 +99,8 @@ const ChatView: React.FC<ChatViewProps> = ({ subLevel, onNavigate }) => {
     }
     setIsSpeaking(index);
     try {
+      // Passamos o texto ORIGINAL (com asteriscos) para o serviço de narração
+      // assim ela pode suspirar e rir no áudio.
       const audioBase64 = await chatServiceRef.current?.generateNarration(text);
       if (audioBase64) {
         const audioData = decodeBase64(audioBase64);
@@ -118,7 +120,7 @@ const ChatView: React.FC<ChatViewProps> = ({ subLevel, onNavigate }) => {
     if (subLevel === SubscriptionLevel.FREE && messageCount >= 5) {
       setMessages(prev => [...prev, { 
         role: 'model', 
-        text: '*te olho com um pouco de saudade* Sabe... eu adoraria continuar essa conversa a noite toda, mas meu tempo aqui é limitado para quem não faz parte do meu círculo íntimo. Que tal continuarmos isso em um lugar mais privado?', 
+        text: '*voz suave* Sabe... eu adoraria continuar essa conversa a noite toda, mas meu tempo aqui é limitado para quem não faz parte do meu círculo íntimo. Que tal continuarmos isso em um lugar mais privado?', 
         timestamp: new Date() 
       }]);
       setInput('');
@@ -132,22 +134,22 @@ const ChatView: React.FC<ChatViewProps> = ({ subLevel, onNavigate }) => {
     setMessageCount(prev => prev + 1);
 
     try {
-      const response = await chatServiceRef.current?.sendMessage(userText) || { text: "*te olho intensamente, sem palavras por um momento...*" };
-      setMessages(prev => [...prev, { role: 'model', text: response.text, imageUrl: response.imageUrl, timestamp: new Date() }]);
+      const response = await chatServiceRef.current?.sendMessage(userText) || { text: "*te olho intensamente* ..." };
+      setMessages(prev => [...prev, { role: 'model', text: response.text, timestamp: new Date() }]);
     } catch (error) {
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Esta função agora OCULTA tudo que estiver entre asteriscos para o chat de texto
   const renderMessageText = (text: string) => {
-    const parts = text.split(/(\*.*?\*)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith('*') && part.endsWith('*')) {
-        return <span key={i} className="text-rose-400/90 italic font-light neon-text-rose">{part.replace(/\*/g, '')}</span>;
-      }
-      return part;
-    });
+    const speechOnly = text.replace(/\*.*?\*/g, '').trim();
+    if (!speechOnly && text.includes('*')) {
+       // Caso ela envie apenas uma ação (ex: *sorriso*), mostramos um sinal de silêncio charmoso
+       return <span className="text-zinc-500 opacity-50 italic">...</span>;
+    }
+    return speechOnly;
   };
 
   return (
@@ -188,13 +190,8 @@ const ChatView: React.FC<ChatViewProps> = ({ subLevel, onNavigate }) => {
                 </button>
             )}
             <div className={`max-w-[85%] space-y-6`}>
-              {msg.imageUrl && (
-                <div className="rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl animate-in fade-in zoom-in-95 duration-1000 neon-border-rose">
-                  <img src={msg.imageUrl} alt="Momento íntimo" className="w-full h-auto max-h-[500px] object-cover" />
-                </div>
-              )}
-              <div className={`p-7 px-9 rounded-[2.5rem] text-[15px] leading-relaxed tracking-wide transition-all font-light ${msg.role === 'user' ? 'bg-zinc-900/40 border border-white/10 text-zinc-100 rounded-tr-none' : 'bg-rose-950/5 border border-rose-900/20 text-zinc-300 rounded-tl-none shadow-[0_0_20px_rgba(225,29,72,0.02)]'}`}>
-                {renderMessageText(msg.text)}
+              <div className={`p-7 px-9 rounded-[2.5rem] text-[16px] leading-relaxed tracking-wide transition-all font-light ${msg.role === 'user' ? 'bg-zinc-900/40 border border-white/10 text-zinc-100 rounded-tr-none' : 'bg-rose-950/5 border border-rose-900/20 text-zinc-300 rounded-tl-none shadow-[0_0_20px_rgba(225,29,72,0.02)]'}`}>
+                {msg.role === 'model' ? renderMessageText(msg.text) : msg.text}
               </div>
             </div>
           </div>
@@ -225,7 +222,7 @@ const ChatView: React.FC<ChatViewProps> = ({ subLevel, onNavigate }) => {
               type="text" 
               value={input} 
               onChange={(e) => setInput(e.target.value)} 
-              placeholder="Diga o que você está sentindo..." 
+              placeholder="Sussurre algo para mim..." 
               className="flex-1 bg-zinc-950 border border-white/5 rounded-full py-6 px-12 focus:outline-none focus:border-rose-900/50 transition-all text-sm tracking-widest placeholder:text-zinc-800 placeholder:italic font-light" 
             />
             <button type="submit" disabled={!input.trim() || isLoading} className="w-20 h-20 rounded-full bg-rose-800 text-white flex items-center justify-center hover:bg-rose-700 disabled:opacity-20 transition-all shadow-xl shadow-rose-900/20 neon-border-rose">
@@ -234,6 +231,9 @@ const ChatView: React.FC<ChatViewProps> = ({ subLevel, onNavigate }) => {
           </form>
         )}
       </div>
+      <style>{`
+        @keyframes sound { 0%, 100% { height: 4px; } 50% { height: 12px; } }
+      `}</style>
     </div>
   );
 };
