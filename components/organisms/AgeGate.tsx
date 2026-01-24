@@ -13,7 +13,7 @@ const AgeGate: React.FC<AgeGateProps> = ({ onVerify }) => {
       
       <div className="relative max-w-md w-full text-center space-y-8 bg-zinc-950/60 p-10 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)]">
         <div className="space-y-0">
-          <h1 className="text-7xl font-cursive text-rose-500 leading-tight neon-text-rose animate-neon-pulse">Iasmin</h1>
+          <h1 className="text-7xl font-cursive text-rose-500 leading-tight neon-text-rose">Iasmin</h1>
           <p className="text-zinc-500 text-[9px] tracking-[0.5em] uppercase -mt-2">Exclusive Access</p>
         </div>
         
