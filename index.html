@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@200..800&family=Parisienne&display=swap" rel="stylesheet">
     <script>
-      // Shim para garantir que o código que referencia process.env não quebre o navegador
+      // Shim para garantir que o código não quebre antes do carregamento do Vite
       window.process = window.process || { env: {} };
     </script>
     <style>
@@ -18,59 +18,35 @@
         color: #f5f5f5;
         overflow-x: hidden;
       }
-      .font-serif {
-        font-family: 'Playfair Display', serif;
-      }
-      .font-cursive {
-        font-family: 'Parisienne', cursive;
-      }
-      /* Subtle Neon Effects */
-      .neon-text-rose {
-        text-shadow: 0 0 10px rgba(225, 29, 72, 0.4), 0 0 20px rgba(225, 29, 72, 0.2);
-      }
-      .neon-border-rose {
-        box-shadow: 0 0 15px rgba(225, 29, 72, 0.15);
-      }
+      .font-serif { font-family: 'Playfair Display', serif; }
+      .font-cursive { font-family: 'Parisienne', cursive; }
+      .neon-text-rose { text-shadow: 0 0 10px rgba(225, 29, 72, 0.4), 0 0 20px rgba(225, 29, 72, 0.2); }
+      .neon-border-rose { box-shadow: 0 0 15px rgba(225, 29, 72, 0.15); }
       .glow-bg {
         filter: blur(80px);
         background: radial-gradient(circle, rgba(74, 29, 29, 0.2) 0%, rgba(5, 5, 5, 0) 70%);
       }
-      
-      /* Custom scrollbar */
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #050505;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #3a1010;
-        border-radius: 10px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #5a1d1d;
-      }
-
-      @keyframes neon-pulse {
-        0%, 100% { opacity: 0.8; }
-        50% { opacity: 1; text-shadow: 0 0 15px rgba(225, 29, 72, 0.6); }
-      }
-      .animate-neon-pulse {
-        animation: neon-pulse 3s infinite ease-in-out;
-      }
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #050505; }
+      ::-webkit-scrollbar-thumb { background: #3a1010; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #5a1d1d; }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3"
+    "react": "https://esm.sh/react@^19.2.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.1"
   }
 }
 </script>
 </head>
   <body>
     <div id="root"></div>
+    <!-- Ponto de entrada crucial para o funcionamento na Vercel -->
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
