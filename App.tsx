@@ -12,14 +12,15 @@ import AgeGate from './components/organisms/AgeGate';
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.HOME);
   const [isVerified, setIsVerified] = useState<boolean>(false);
-  const [subscription, setSubscription] = useState<SubscriptionLevel>(SubscriptionLevel.FREE);
+  // Definindo ELITE como padrão para remover limitações
+  const [subscription, setSubscription] = useState<SubscriptionLevel>(SubscriptionLevel.ELITE);
 
   useEffect(() => {
     const verified = localStorage.getItem('iasmin_verified');
     if (verified === 'true') setIsVerified(true);
     
-    const savedSub = localStorage.getItem('iasmin_sub') as SubscriptionLevel;
-    if (savedSub) setSubscription(savedSub);
+    // Forçamos ELITE independentemente do que estiver salvo para o teste atual
+    setSubscription(SubscriptionLevel.ELITE);
   }, []);
 
   const handleVerify = () => {

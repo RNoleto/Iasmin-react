@@ -85,7 +85,7 @@ const StoriesView: React.FC<StoriesViewProps> = ({ subLevel, onNavigate }) => {
             updatedStories[i].coverImage = img;
             setStories([...updatedStories]);
           }
-          await new Promise(r => setTimeout(r, 400));
+          await new Promise(r => setTimeout(r, 200));
         } catch (e) {
           updatedStories[i].coverImage = `https://images.unsplash.com/${updatedStories[i].unsplashId}?auto=format&fit=crop&q=80`;
           setStories([...updatedStories]);
@@ -107,11 +107,6 @@ const StoriesView: React.FC<StoriesViewProps> = ({ subLevel, onNavigate }) => {
   };
 
   const handlePlayDemo = async (story: ExtendedStory) => {
-    if (story.isPremium && subLevel === SubscriptionLevel.FREE) {
-      onNavigate(View.SUBSCRIPTION);
-      return;
-    }
-
     if (playing === story.id) { stopAudio(); return; }
     stopAudio();
     if (!audioContextRef.current) {
@@ -155,7 +150,7 @@ const StoriesView: React.FC<StoriesViewProps> = ({ subLevel, onNavigate }) => {
   return (
     <div className="space-y-12 md:space-y-24 pb-32 animate-in fade-in duration-1000 relative">
       <div className="text-center space-y-4 md:space-y-6">
-        <h2 className="text-5xl md:text-7xl font-serif italic text-white tracking-tighter neon-text-rose">Voz da Dubai Brasileira</h2>
+        <h2 className="text-5xl md:text-7xl font-serif italic text-white tracking-tighter neon-text-rose">Segredos Narrados</h2>
         <div className="flex items-center justify-center gap-4">
            <div className="h-[1px] w-12 md:w-20 bg-gradient-to-r from-transparent to-rose-900 shadow-[0_0_5px_rgba(225,29,72,0.5)]"></div>
            <p className="text-rose-600 text-[9px] md:text-[11px] uppercase tracking-[0.4em] md:tracking-[0.6em] font-bold">Litoral Sul</p>
@@ -168,19 +163,11 @@ const StoriesView: React.FC<StoriesViewProps> = ({ subLevel, onNavigate }) => {
           <div key={story.id} className="group bg-[#030303] rounded-[2rem] md:rounded-[3.5rem] overflow-hidden border border-white/5 flex flex-col hover:border-rose-900/30 transition-all duration-700 hover:shadow-[0_0_40px_rgba(225,29,72,0.05)] relative">
             <div className="aspect-[4/5] relative overflow-hidden bg-zinc-950">
               {generatingImages && !story.coverImage ? (
-                <div className="w-full h-full animate-pulse bg-zinc-950 flex items-center justify-center text-[9px] text-zinc-800 uppercase tracking-widest italic">Carregando...</div>
+                <div className="w-full h-full animate-pulse bg-zinc-950 flex items-center justify-center text-[9px] text-zinc-800 uppercase tracking-widest italic">...</div>
               ) : (
-                <img src={story.coverImage} className={`w-full h-full object-cover grayscale-[0.6] opacity-30 group-hover:grayscale-0 group-hover:opacity-70 transition-all duration-1000 scale-105 group-hover:scale-100 ${story.isPremium && subLevel === SubscriptionLevel.FREE ? 'blur-md opacity-20' : ''}`} />
+                <img src={story.coverImage} className="w-full h-full object-cover grayscale-[0.2] opacity-40 group-hover:grayscale-0 group-hover:opacity-70 transition-all duration-1000 scale-105 group-hover:scale-100" />
               )}
               
-              {story.isPremium && subLevel === SubscriptionLevel.FREE && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
-                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-rose-950/40 border border-rose-900/40 flex items-center justify-center text-rose-500 neon-border-rose">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                  </div>
-                </div>
-              )}
-
               <div className="absolute inset-0 bg-gradient-to-t from-[#030303] via-transparent to-transparent"></div>
               
               {playing === story.id && (
@@ -195,16 +182,16 @@ const StoriesView: React.FC<StoriesViewProps> = ({ subLevel, onNavigate }) => {
 
               <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 right-6 md:right-10">
                 <p className="text-[9px] md:text-[10px] text-rose-500 font-bold uppercase tracking-[0.4em] mb-2 md:mb-3 neon-text-rose">{story.duration}</p>
-                <h3 className="text-2xl md:text-4xl font-serif italic text-white leading-tight tracking-tight">{story.title}</h3>
+                <h3 className="text-2xl md:text-3xl font-serif italic text-white leading-tight tracking-tight">{story.title}</h3>
               </div>
             </div>
-            <div className="p-8 md:p-12 pt-0 flex-1 flex flex-col justify-between space-y-6 md:space-y-10">
+            <div className="p-8 md:p-10 pt-0 flex-1 flex flex-col justify-between space-y-6">
               <p className="text-[12px] md:text-[13px] text-zinc-500 italic font-light leading-relaxed line-clamp-3">
-                {story.isPremium && subLevel === SubscriptionLevel.FREE ? "Esse segredo é guardado para membros do Círculo Íntimo..." : `"${story.excerpt.replace(/\*.*?\*/g, '')}"`}
+                {`"${story.excerpt.replace(/\*.*?\*/g, '')}"`}
               </p>
               <button 
                 onClick={() => handlePlayDemo(story)}
-                className={`w-full h-14 md:h-16 rounded-full text-[10px] md:text-[11px] font-bold uppercase tracking-[0.3em] md:tracking-[0.4em] transition-all border flex items-center justify-center gap-4 ${
+                className={`w-full h-14 md:h-16 rounded-full text-[10px] md:text-[11px] font-bold uppercase tracking-[0.3em] transition-all border flex items-center justify-center gap-4 ${
                   playing === story.id 
                   ? 'bg-rose-900 border-rose-800 text-white neon-border-rose' 
                   : 'bg-transparent border-white/10 text-zinc-500 hover:border-rose-900/40 hover:text-rose-500'
@@ -214,8 +201,6 @@ const StoriesView: React.FC<StoriesViewProps> = ({ subLevel, onNavigate }) => {
                   <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                 ) : playing === story.id ? (
                   <>Parar</>
-                ) : story.isPremium && subLevel === SubscriptionLevel.FREE ? (
-                  <>Liberar Acesso</>
                 ) : (
                   <>Ouvir Agora</>
                 )}
