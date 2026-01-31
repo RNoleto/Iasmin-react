@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Photo, View, SubscriptionLevel } from '../../types';
-import { IASminChatService } from '../../services/geminiService';
+import { api } from '../../services/api'; // <--- Importamos nosso novo serviço
 
 interface GalleryItem extends Photo {
   aspect: "3:4" | "9:16" | "1:1";
@@ -18,40 +17,78 @@ const GalleryView: React.FC<GalleryViewProps> = ({ subLevel, onNavigate }) => {
   const [photos, setPhotos] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // CONFIGURAÇÃO SINCRONIZADA COM O BANCO DE DADOS
   const galleryConfigs: { prompt: string; unsplashId: string; aspect: "3:4" | "9:16" | "1:1"; title: string; isPremium: boolean }[] = [
-    { prompt: "Close-up smartphone selfie smiling, Praia Central BC in background", unsplashId: "photo-1524504388940-b1c1722653e1", aspect: "1:1", title: "Bom dia, BC", isPremium: false },
-    { prompt: "Mirror selfie in a luxury penthouse, wearing a black bikini, beach view behind through the window", unsplashId: "photo-1515886657613-9f3515b0c78f", aspect: "9:16", title: "Dubai Brasileira", isPremium: false },
-    { prompt: "Candid shot at the beach sand, wearing sunglasses and a bikini, sunny day, realistic skin", unsplashId: "photo-1494790108377-be9c29b29330", aspect: "3:4", title: "Sol de SC", isPremium: true },
-    { prompt: "Selfie sitting in a luxury yacht, wearing beachwear, hair messy from the wind", unsplashId: "photo-1531746020798-e7953e3e8c5c", aspect: "3:4", title: "Navegando", isPremium: true },
-    { prompt: "Full body selfie in the elevator of a skyscraper, going to the beach with a towel and bikini", unsplashId: "photo-1488426862026-3ee34a7d66df", aspect: "9:16", title: "Descendo", isPremium: true },
-    { prompt: "A close-up of my tanned shoulder and neck, sunset light at the beach", unsplashId: "photo-1503104834685-7205e8607eb9", aspect: "1:1", title: "Dourada", isPremium: true },
-    { prompt: "Walking on the sand, low angle selfie looking down at the camera, wearing a sarong and bikini top", unsplashId: "photo-1491349174775-aaafddd81942", aspect: "3:4", title: "Caminhada", isPremium: true },
-    { prompt: "Smartphone selfie at night, balcony of the apartment with city lights of BC behind", unsplashId: "photo-1502323777036-f29e3972d82f", aspect: "9:16", title: "Luzes da Noite", isPremium: true }
+    { 
+      title: "Calçadão BC",
+      prompt: "Full body candid shot, walking on a beach boardwalk in Balneário Camboriú. She is looking away from the camera, adjusting her hair, wearing a stylish white beach cover-up and sunglasses. windy day, movement blur, urban beach background.", 
+      unsplashId: "ignore", aspect: "1:1", isPremium: false 
+    },
+    { 
+      title: "Manhã Leve",
+      prompt: "Sitting on a messy white bed in a luxury hotel room, holding a cup of coffee. She is wearing a silk robe, looking out the window at the ocean view. Side profile, soft morning light, cozy atmosphere. Not looking at the camera.", 
+      unsplashId: "ignore", aspect: "1:1", isPremium: true 
+    },
+    { 
+      title: "Indo pra Praia",
+      prompt: "Sitting in the driver's seat of a luxury car (beige leather interior). One hand on the steering wheel, the other adjusting the rearview mirror. Sunlight flaring through the window. Candid, slightly from the side. Wearing oversized sunglasses.", 
+      unsplashId: "ignore", aspect: "1:1", isPremium: true 
+    },
+    { 
+      title: "Infinity View",
+      prompt: "Rear view (from behind), resting on the edge of a rooftop infinity pool. Looking at the city skyline. Wet hair slicked back. Wearing a bikini. Focus on the back and the view, blurry city lights in the background. Sunset hour.", 
+      unsplashId: "ignore", aspect: "1:1", isPremium: true 
+    },
+    { 
+      title: "Alto Mar",
+      prompt: "Selfie sitting in a luxury yacht, wearing beachwear, hair messy from the wind. Smiling, ocean background.", 
+      unsplashId: "ignore", aspect: "1:1", isPremium: true 
+    },
+    { 
+      title: "Luzes da Cidade",
+      prompt: "Smartphone selfie at night, balcony of the apartment with city lights of BC behind. Wearing elegant black loungewear.", 
+      unsplashId: "ignore", aspect: "1:1", isPremium: true 
+    },
+    { 
+        title: "Antes de Sair",
+        prompt: "Mirror selfie in a luxury penthouse, wearing a black bikini, beach view behind through the window.", 
+        unsplashId: "ignore", aspect: "1:1", isPremium: false 
+    }
   ];
 
   useEffect(() => {
     const fetchPhotos = async () => {
-      const service = new IASminChatService();
       const generated: GalleryItem[] = [];
       
+      // Agora chamamos o Backend para cada configuração
       for (let i = 0; i < galleryConfigs.length; i++) {
         const config = galleryConfigs[i];
-        const img = await service.generateImage(config.prompt, config.aspect);
         
-        if (img) {
-          generated.push({
-            id: String(i + 1),
-            url: img,
-            isLocked: false,
-            aspect: config.aspect,
+        // Chamada ao Backend (que vai checar o banco ou gerar no Gemini)
+        const response = await api.getGalleryImage({
+            prompt: config.prompt,
+            aspectRatio: config.aspect,
             title: config.title,
             isPremium: config.isPremium
+        });
+        
+        // Se o backend retornou uma imagem válida
+        if (response && response.imageUrl) {
+          generated.push({
+            id: response.id || String(i + 1),
+            url: response.imageUrl, // URL local (http://localhost:3333/uploads/...)
+            isLocked: false,
+            aspect: config.aspect,
+            title: response.title,
+            isPremium: response.isPremium
           });
+          // Atualiza a tela a cada foto que chega (efeito progressivo)
           setPhotos([...generated]);
         }
       }
       setLoading(false);
     };
+
     fetchPhotos();
   }, []);
 
@@ -71,6 +108,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ subLevel, onNavigate }) => {
             <img 
               src={photo.url} 
               alt={photo.title}
+              loading="lazy"
               className="w-full h-auto object-cover transition-all duration-1000 opacity-70 group-hover:opacity-100 group-hover:scale-105" 
             />
             
@@ -81,7 +119,9 @@ const GalleryView: React.FC<GalleryViewProps> = ({ subLevel, onNavigate }) => {
         ))}
         
         {loading && photos.length < galleryConfigs.length && (
-          <div className="w-full aspect-[3/4] rounded-[1.5rem] bg-zinc-950/40 animate-pulse border border-white/5"></div>
+          <div className="w-full aspect-[3/4] rounded-[1.5rem] bg-zinc-950/40 animate-pulse border border-white/5 flex items-center justify-center">
+             <span className="text-rose-500 text-xs tracking-widest uppercase animate-bounce">Carregando...</span>
+          </div>
         )}
       </div>
     </div>
