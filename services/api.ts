@@ -36,5 +36,35 @@ export const api = {
     } catch (error) {
       return [];
     }
+  },
+
+  /**
+   * Envia uma mensagem para a Iasmin e recebe a resposta.
+   * Se o servidor estiver offline, retorna uma resposta local padrão.
+   * @param message Mensagem do usuário
+   * @param history Histórico de mensagens anteriores
+   * @return Resposta da Iasmin
+   */
+  async sendMessage(message: string, history: string[] = []) {
+    try {
+      const response = await fetch(`${API_URL}/chat/message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message, history }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao enviar mensagem');
+      }
+
+      const data = await response.json();
+      return data.reply; // Retorna o texto da Iasmin
+    } catch (error) {
+      console.error('Erro Chat:', error);
+      // Fallback local caso o servidor esteja offline
+      return "O que você disse? Me perdi no seu olhar."; 
+    }
   }
 };
