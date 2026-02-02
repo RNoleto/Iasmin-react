@@ -66,5 +66,22 @@ export const api = {
       // Fallback local caso o servidor esteja offline
       return "O que você disse? Me perdi no seu olhar."; 
     }
+  },
+  async generateAudio(text: string) {
+    try {
+      const response = await fetch(`${API_URL}/audio/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) throw new Error('Erro áudio');
+      
+      const data = await response.json();
+      return data.audio; // Retorna string Base64
+    } catch (error) {
+      console.error('Erro Audio:', error);
+      return null;
+    }
   }
 };
